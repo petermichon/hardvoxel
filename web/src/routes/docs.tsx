@@ -43,6 +43,10 @@ function DocsPage() {
             <li>Docker Engine, running locally</li>
             <li>git</li>
           </ul>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Podman works too: set{" "}
+            <code className="font-mono text-foreground">HARDVOXEL_DOCKER=podman</code>.
+          </p>
 
           <h2 className="display mt-16 text-3xl">Quickstart</h2>
           <p className="mt-6 text-sm text-muted-foreground">

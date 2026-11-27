@@ -23,6 +23,8 @@ provision servers, or terminate TLS.
 - Docker Engine, running locally
 - Bun for the workspace scripts
 
+Podman works for local development: `HARDVOXEL_DOCKER=podman node packages/cli/bin/hardvoxel.js up`.
+
 ## Quickstart
 
 ```bash
