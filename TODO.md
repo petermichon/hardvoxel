@@ -2,6 +2,7 @@
 
 ## Now
 
+- [ ] Remove the temporary `X-Robots-Tag: noindex` from `edge/sites/hardvoxel.caddyfile` at the v1 launch.
 - [ ] Run the CLI against a real Docker host: `up`, `down`, `status`, `logs`.
 - [ ] Add `hardvoxel init` when the config schema settles.
 - [ ] Update every GitHub link to `petermichon/hardvoxel`.
