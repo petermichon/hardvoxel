@@ -66,14 +66,10 @@ All values live in `web/src/styles.css`.
 
 ## Voice and content
 
-- **Container** is the user-facing noun. “Voxel” only appears in the brand and product names
-  (Voxel-1, Voxel-2, Voxel-4).
-- Every plan is a **resource pool**: RAM, CPU, storage, and bandwidth. Containers are limited by
-  the pool, not by a fixed count.
-- State **hard minimums** and **best-effort burst** precisely. Do not imply literal bare
-  metal.
-- If you mention bandwidth, distinguish a monthly transfer allowance from a guaranteed throughput
-  rate.
+- **Container** is the user-facing noun. “Voxel” is brand language only.
+- The current release runs on **one Docker host**. Multi-server capacity pooling is roadmap, not
+  a present-tense feature.
+- Do not add pricing, plans, company details, personal addresses, or a hosted-service claim.
 - No decorative section labels (`// 001 — Platform`), fake sequence numbers (`01 →`), or taglines
   that add no information.
 - Keep claims concrete. Prefer “pull a prebuilt image” over “build your app.”
