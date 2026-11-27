@@ -1,0 +1,386 @@
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --font-sans: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.5rem;
+  --background: oklch(0.965 0.003 85);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(0.985 0.002 85);
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(0.985 0.002 85);
+  --popover-foreground: oklch(0.18 0 0);
+  --primary: oklch(0.18 0 0);
+  --primary-foreground: oklch(0.985 0.002 85);
+  --secondary: oklch(0.93 0.003 85);
+  --secondary-foreground: oklch(0.18 0 0);
+  --muted: oklch(0.94 0.003 85);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.92 0.003 85);
+  --accent-foreground: oklch(0.18 0 0);
+  --destructive: oklch(0.55 0 0);
+  --destructive-foreground: oklch(0.985 0.002 85);
+  --border: oklch(0.86 0.003 85);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.55 0 0);
+  --chart-1: oklch(0.646 0 0);
+  --chart-2: oklch(0.6 0 0);
+  --chart-3: oklch(0.398 0 0);
+  --chart-4: oklch(0.828 0 0);
+  --chart-5: oklch(0.769 0 0);
+  --sidebar: oklch(0.97 0 0);
+  --sidebar-foreground: oklch(0.18 0 0);
+  --sidebar-primary: oklch(0.18 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0.002 85);
+  --sidebar-accent: oklch(0.94 0 0);
+  --sidebar-accent-foreground: oklch(0.18 0 0);
+  --sidebar-border: oklch(0.86 0 0);
+  --sidebar-ring: oklch(0.55 0 0);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.11 0 0);
+  --foreground: oklch(0.965 0.002 85);
+  --card: oklch(0.16 0 0);
+  --card-foreground: oklch(0.965 0.002 85);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.965 0.002 85);
+  --primary: oklch(0.94 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --secondary: oklch(0.2 0 0);
+  --secondary-foreground: oklch(0.965 0.002 85);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.21 0 0);
+  --accent-foreground: oklch(0.965 0.002 85);
+  --destructive: oklch(0.7 0 0);
+  --destructive-foreground: oklch(0.18 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.6 0 0);
+  --chart-1: oklch(0.488 0 0);
+  --chart-2: oklch(0.696 0 0);
+  --chart-3: oklch(0.769 0 0);
+  --chart-4: oklch(0.627 0 0);
+  --chart-5: oklch(0.645 0 0);
+  --sidebar: oklch(0.16 0 0);
+  --sidebar-foreground: oklch(0.965 0.002 85);
+  --sidebar-primary: oklch(0.488 0 0);
+  --sidebar-primary-foreground: oklch(0.965 0.002 85);
+  --sidebar-accent: oklch(0.2 0 0);
+  --sidebar-accent-foreground: oklch(0.965 0.002 85);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.6 0 0);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .display {
+    font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    font-weight: 500;
+  }
+
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+}
+
+/* Matte grain: a fixed, non-interactive overlay keeps surfaces from looking
+   like flat vector fills. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.dark body::after {
+  opacity: 0.022;
+  filter: invert(1);
+}
+
+/* Rounded controls on a blocky layout. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  font-family: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 8px 20px rgb(0 0 0 / 0.04);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.btn-sm {
+  height: 2.5rem;
+  padding: 0 1.125rem;
+}
+
+.btn-md {
+  height: 3rem;
+  padding: 0 1.5rem;
+}
+
+.btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.btn-primary:hover {
+  background: color-mix(in oklch, var(--foreground) 88%, var(--background));
+}
+
+.btn-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--muted);
+}
+
+.btn-inverted {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.btn-inverted:hover {
+  background: color-mix(in oklch, var(--background) 88%, var(--foreground));
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* A light control that stays light on a permanently dark section in both themes. */
+.btn-on-dark {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.btn-on-dark:hover {
+  background: color-mix(in oklch, var(--background) 88%, var(--foreground));
+}
+
+.dark .btn-on-dark {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.dark .btn-on-dark:hover {
+  background: color-mix(in oklch, var(--foreground) 88%, var(--background));
+}
+
+:where(a, button, summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Rounded, matte surfaces on top of the hard-edged page structure. */
+.matte-card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 18px 40px rgb(0 0 0 / 0.05);
+}
+
+.matte-card--inverted {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: transparent;
+}
+
+.dark .matte-card {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.35),
+    0 20px 50px rgb(0 0 0 / 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn {
+    transition: none;
+  }
+
+  .btn:hover,
+  .btn:active {
+    transform: none;
+  }
+}
+
+@utility studio-light {
+  background-image: radial-gradient(ellipse at 50% 0%, var(--studio-light), transparent 65%);
+}
+
+/* Theme-aware grounding shadow: black on white, white on dark. The filter is
+   on the SVG root and the root is not clipped, so the glow stays round. */
+.logo-mark {
+  overflow: visible;
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.28));
+}
+
+/* Scaled variant for the hero: a larger, softer halo so the mark keeps the
+   same read at 490px as the 28px header mark. */
+.logo-mark--display {
+  filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.14));
+}
+
+.dark .logo-mark {
+  filter: drop-shadow(0 1px 4px rgb(255 255 255 / 0.28));
+}
+
+.dark .logo-mark--display {
+  filter: drop-shadow(0 0 24px rgb(255 255 255 / 0.12));
+}
+
+/* Face lighting for the cube mark: the top catches the light and the right
+   face falls into shade. Light mode reverses the values for a black cube. */
+:root {
+  --cube-base: #000000;
+  --cube-top: #121212;
+  --cube-left: #080808;
+  --cube-right: #000000;
+  --studio-light: rgb(0 0 0 / 0.04);
+}
+
+.dark {
+  --cube-base: #e8e8e8;
+  --cube-top: #ffffff;
+  --cube-left: #f8f8f8;
+  --cube-right: #e8e8e8;
+  --studio-light: rgb(255 255 255 / 0.04);
+}
+
+.cube-face-base {
+  fill: var(--cube-base);
+}
+
+.cube-face-top {
+  fill: var(--cube-top);
+}
+
+.cube-face-left {
+  fill: var(--cube-left);
+}
+
+.cube-face-right {
+  fill: var(--cube-right);
+}

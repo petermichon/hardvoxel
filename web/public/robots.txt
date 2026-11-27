@@ -1,0 +1,8 @@
+# Search and AI discovery crawlers are welcome.
+# One wildcard rule keeps agent search APIs included; add named groups only
+# for deliberate exceptions.
+User-agent: *
+Allow: /
+
+
+Sitemap: https://hardvoxel.com/sitemap.xml

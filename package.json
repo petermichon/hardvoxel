@@ -1,0 +1,29 @@
+{
+  "name": "hardvoxel",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petermichon/hardvoxel"
+  },
+  "workspaces": [
+    "web",
+    "packages/cli"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd web dev",
+    "dev:host": "bun run --cwd web dev:host",
+    "build": "bun run --cwd web build",
+    "build:dev": "bun run --cwd web build:dev",
+    "preview": "bun run --cwd web preview",
+    "lint": "bun run --cwd web lint",
+    "typecheck": "bun run --cwd web typecheck",
+    "check": "bun run --cwd web typecheck",
+    "test": "bun test",
+    "test:web": "bun run --cwd web test",
+    "test:cli": "bun test packages/cli/test",
+    "generate:favicon": "bun run --cwd web generate:favicon",
+    "format": "bun run --cwd web format",
+    "format:check": "bun run --cwd web format:check"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@hardvoxel/cli",
+  "version": "0.1.0",
+  "description": "Deploy prebuilt OCI images to your own Docker host.",
+  "type": "module",
+  "bin": {
+    "hardvoxel": "./bin/hardvoxel.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "bun test"
+  }
+}
