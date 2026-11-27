@@ -26,8 +26,11 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/web/dist ./dist
-COPY --from=build /app/web/server.mjs ./server.mjs
+COPY --from=prod-deps /app/web/node_modules ./web/node_modules
+COPY --from=build /app/web/dist ./web/dist
+COPY --from=build /app/web/server.mjs ./web/server.mjs
+
+WORKDIR /app/web
 
 USER node
 EXPOSE 3000
