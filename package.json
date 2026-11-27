@@ -25,5 +25,8 @@
     "generate:favicon": "bun run --cwd web generate:favicon",
     "format": "bun run --cwd web format",
     "format:check": "bun run --cwd web format:check"
+  },
+  "dependencies": {
+    "srvx": "^1.0.8"
   }
 }

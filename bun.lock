@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "hardvoxel",
+      "dependencies": {
+        "srvx": "^1.0.8",
+      },
     },
     "packages/cli": {
       "name": "@hardvoxel/cli",
