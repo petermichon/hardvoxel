@@ -35,6 +35,8 @@ Hardvoxel is not a hosted service. There is no pricing, paid plan, or support co
   digests, and result.
 - **Token** — a scoped bearer credential for the HTTPS API (`deploy` or `read`). Admin operations
   use the local socket.
+- **Secret** — a named, project-scoped value stored outside the spec. Containers reference names,
+  never values.
 
 A project is not a user account, repository, or organisation. One server can host multiple
 projects, routed by domain.
@@ -89,7 +91,8 @@ daemon
   `apply`; making it persistent is an open question.
 - If daemon state is lost, the file re-applies the spec; secret values come from backup; container
   labels and Caddy config aid reconstruction.
-- Secret values do not belong in the spec. Storage is an open question.
+- Secret values live in project-scoped `0600` files, not in the spec or SQLite. See
+  [Secrets](#secrets).
 - No PostgreSQL. A single-host platform does not need a database server.
 
 ### Runtime adapter
@@ -198,6 +201,71 @@ hv_<id>_<secret>
 - Failed authentication is rate-limited.
 - Authentication failures, token changes, deployments, and volume deletion are audited.
 - Audit and token metadata are readable only over the local admin socket.
+
+## Secrets
+
+Secret values are files, not database rows. The public API only sees names.
+
+### Storage
+
+- `/var/lib/hardvoxel/secrets/<project>/<name>`: mode `0600`, owner `root:hardvoxel`.
+- SQLite stores metadata only: name, created, and updated. Usage is derived from the spec.
+- Values never appear in the spec, state database, logs, `status` output, or deployment snapshots.
+- Secrets are project-scoped. A service cannot reference another project's secret.
+
+### Delivery
+
+File mounts are the default:
+
+```json
+{
+  "services": {
+    "db": {
+      "image": "postgres:17",
+      "secrets": ["db_password"]
+    }
+  }
+}
+```
+
+Inside the container, the file appears at `/run/secrets/db_password`. Images that support `_FILE`
+variables, such as Postgres, can consume it directly.
+
+At deploy time the daemon:
+
+1. reads the master secret;
+2. creates a per-container copy under `/var/lib/hardvoxel/run/<container>/<name>`;
+3. sets mode `0400` and ownership to the service's `uid`/`gid` (default `0:0`);
+4. mounts the copy read-only at `/run/secrets/<name>`;
+5. removes the copy with the container.
+
+This lets a non-root container read its own secret without exposing the master file.
+
+`env_from_secrets` is an explicit compatibility mode. Environment secrets are visible in
+`docker inspect` and must be requested deliberately.
+
+### Management
+
+- Local admin over SSH only: `hardvoxel secret set/list/rm`.
+- `set` prompts with hidden input; there is no `--value` flag. Automation uses stdin.
+- `list` shows names, timestamps, and usage, never values.
+- A missing secret fails the deploy before the old version is touched.
+- Secret names may appear in audit logs; values never do.
+
+### Rotation and rollback
+
+- `secret set` replaces the value atomically.
+- Existing containers keep the old value until they are redeployed.
+- V1 has no secret versioning. Rollback restores the container spec and secret references, and
+  resolves the current values. This is documented, Kubernetes-style behavior.
+
+### Encryption at rest
+
+- The host should use full-disk encryption (LUKS). The installer makes a best-effort check and warns
+  if it cannot detect it.
+- Do not add app-level encryption with a key on the same disk. It is not a boundary against root.
+- `hardvoxel backup --include-secrets` must warn and must not produce an unencrypted archive by
+  default.
 
 ## Why Caddy
 
@@ -340,8 +408,12 @@ daemon's lifetime.
 - The access log configuration excludes `Authorization` headers.
 - Port conflicts on 80/443 fail before any container is changed.
 - State files and certificates are `0600`/`0700` where possible.
-- Secret storage is an open question. Values are never returned by the CLI or API, and files are
-  permissioned.
+- Secret values live in `0600` files outside SQLite. Containers receive read-only per-container
+  copies owned by their runtime UID/GID.
+- `env_from_secrets` is an explicit compatibility mode; env secrets are visible in `docker inspect`.
+- The installer warns when full-disk encryption is not detected. App-level encryption with a local
+  key is not a v1 claim.
+- Secret values are never returned by the CLI or API, and never logged.
 - The installer pins the Caddy version and verifies its checksum.
 
 ## Multi-server path
@@ -388,6 +460,10 @@ replace the node proxy. Shared storage across machines is not promised.
 | Token management | Local admin socket only | OWASP management-endpoint guidance; smaller public surface. |
 | Token format | `hv_<id>_<secret>`, SHA-256 | Opaque, revocable, scannable, shown once. |
 | Token lifetime | 90 days by default | Expiry, rotation, and revocation are built in. |
+| Secret storage | `0600` files outside SQLite | DB copies and backups do not leak values. |
+| Secret delivery | Read-only file mounts by default | Avoids env leakage; env fallback is explicit. |
+| Secret management | Local admin socket only | Same management-surface rule as tokens. |
+| Secret encryption | Host disk encryption | A key on the same disk is not a root boundary. |
 | Browser UI | Not in v1 | CLI and API first. |
 | Control-plane hostname | Required | TLS and routing; separate from app hosts. |
 | State | SQLite | Single host, embedded, no database server. |
@@ -405,7 +481,9 @@ replace the node proxy. Shared storage across machines is not promised.
 - Whether v1 ships a shell installer, distro packages, or both.
 - Whether the daemon API is a documented, stable contract in v1 or private to the CLI.
 - Whether `rollback` is a one-off runtime override or persists until the next `apply`.
-- Secrets at rest: separate `0600` environment files, encrypted state, or Docker secrets.
+- Secret versioning for exact rollback reproduction.
+- Whether `hardvoxel backup --include-secrets` emits an encrypted archive or delegates encryption
+  to the operator.
 - How much of the existing `hardvoxel.json` schema survives the move to daemon-managed state.
 - Rootless runtime support. Rootful Docker is the v1 assumption.
 - Backup and restore of named volumes.

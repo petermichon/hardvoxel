@@ -25,6 +25,10 @@ local daemon and an embedded Caddy ingress.
 - [ ] Embedded Caddy ingress: app hostnames, automatic TLS, atomic route changes.
 - [ ] Static control-plane hostname and route, separate from app hostnames.
 - [ ] Runtime adapter for Docker and Podman.
+- [ ] Project-scoped secret files with metadata, values kept out of the spec and SQLite.
+- [ ] Read-only secret mounts with per-container UID/GID; explicit environment fallback.
+- [ ] `hardvoxel secret set/list/rm` over SSH admin.
+- [ ] Secret validation before deploy.
 - [ ] Health-gated deploys with draining and rollback.
 - [ ] CLI over HTTPS with `hardvoxel login`, plus `hardvoxel admin` over SSH.
 - [ ] `up`, `down`, `status`, `logs`, and `rollback`.
@@ -36,6 +40,9 @@ local daemon and an embedded Caddy ingress.
 
 - [ ] Optional browser UI.
 - [ ] Container isolation hardening for deploy tokens.
+- [ ] Secret versioning for exact rollback.
+- [ ] Encrypted backup archive for secrets.
+- [ ] `secret rotate --restart`.
 - [ ] `hardvoxel init` to generate a starter config.
 - [ ] Machine-readable JSON output for `status`.
 - [ ] Environment management.

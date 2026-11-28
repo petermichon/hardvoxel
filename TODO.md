@@ -8,6 +8,12 @@
 - [ ] Admin socket: token create/list/rotate/revoke, audit, volume deletion.
 - [ ] Control-plane Caddy block: dedicated hostname, TLS, static route.
 - [ ] Runtime adapter: Docker/Podman, per-project network, stable aliases, health checks.
+- [ ] Secret store: `0600` project files, metadata in SQLite, no values in the spec or database.
+- [ ] Secret delivery: per-container `0400` copies, service `uid`/`gid`, read-only mounts; env fallback.
+- [ ] `hardvoxel secret set/list/rm` over SSH admin; hidden prompt and stdin.
+- [ ] Validate referenced secrets before deploy; fail without touching the old version.
+- [ ] Audit secret set/rm by name; never log values.
+- [ ] Installer warns if full-disk encryption is not detected.
 - [ ] Caddy supervisor: bootstrap config, admin Unix socket, resume on boot, certificate storage.
 - [ ] Ingress adapter: app route set only; never rewrite the control-plane route.
 - [ ] Deploy pipeline: pull, start unrouted, health-check, route, verify, drain, stop.
@@ -15,8 +21,8 @@
 - [ ] CLI over HTTPS with `hardvoxel login` (hidden prompt, `0600`); `hardvoxel admin` over SSH.
 - [ ] `rollback` from deployment history.
 - [ ] Installer and systemd units.
-- [ ] Tests: unit, Caddy config rendering, auth scopes, expiry, revocation, and an integration pass
-      with Podman.
+- [ ] Tests: unit, Caddy config rendering, auth scopes, expiry, revocation, secret permissions,
+      missing secrets, env fallback, rotation, and an integration pass with Podman.
 - [ ] Update the site and docs to describe the daemon, HTTPS control plane, and embedded ingress.
 - [ ] Document that `deploy` tokens are high-trust; container isolation is future work.
 
@@ -24,6 +30,9 @@
 
 - [ ] Optional browser UI.
 - [ ] Container isolation hardening for deploy tokens.
+- [ ] Secret versioning for exact rollback.
+- [ ] Encrypted backup archive for secrets.
+- [ ] `secret rotate --restart`.
 - [ ] `hardvoxel init`.
 - [ ] Machine-readable JSON output for `status`.
 - [ ] Environment management.
