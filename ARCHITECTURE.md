@@ -87,8 +87,8 @@ daemon
   never stored.
 - `apply` is a full reconcile. Services removed from the file are stopped; volumes are preserved.
   Destructive removals require `--prune`.
-- `rollback` activates an older deployment. The v1 default is a runtime override until the next
-  `apply`; making it persistent is an open question.
+- `rollback` creates a new deployment from an older snapshot and makes it current. The next `apply`
+  creates a new deployment from the file and moves forward. There is no separate pin or override.
 - If daemon state is lost, the file re-applies the spec; secret values come from backup; container
   labels and Caddy config aid reconstruction.
 - Secret values live in project-scoped `0600` files, not in the spec or SQLite. See
@@ -133,7 +133,7 @@ steps. Clients do not create containers, networks, or routes directly.
 | `GET` | `/v1/projects/{project}/deployments` | `read` | Deployment history. |
 | `GET` | `/v1/deployments/{id}` | `read` | Deployment progress and result. |
 | `GET` | `/v1/deployments/{id}/events` | `read` | Progress stream. |
-| `POST` | `/v1/projects/{project}/rollback` | `deploy` | Activate an older deployment. |
+| `POST` | `/v1/projects/{project}/rollback` | `deploy` | Create a new current deployment from an older snapshot. |
 | `POST` | `/v1/projects/{project}/stop` | `deploy` | Stop containers, keep state. |
 | `DELETE` | `/v1/projects/{project}` | `deploy` | Destroy containers and networks; volumes require local admin. |
 | `GET` | `/v1/projects/{project}/logs` | `read` | Container and proxy logs. |
@@ -326,7 +326,22 @@ record the deployment
 The old version serves until the new one is healthy and routed. A bad image never takes the
 application down.
 
-`rollback` re-activates the previous deployment's image and route using the same sequence.
+`rollback` deploys an older snapshot as a new current deployment, using the same health-gated
+sequence.
+
+## Deployments and rollback
+
+Every `apply` creates an immutable deployment: the spec, image digests, non-secret environment,
+secret names, routes, resources, health checks, and result.
+
+`rollback` creates a new deployment from an older snapshot and makes it current. The next `apply`
+creates a new deployment from the file and moves forward. There is no separate pin or override mode.
+
+Snapshots do not include volumes, database contents, migrations, external services, or secret
+values. Those remain the operator's responsibility.
+
+Retention: keep the last 10 deployments or 30 days, whichever is longer. If a required image digest
+is no longer available, fail before changing the running version.
 
 ## Process model
 
@@ -434,6 +449,7 @@ replace the node proxy. Shared storage across machines is not promised.
 - Git integration.
 - Kubernetes.
 - Multi-server scheduling.
+- Rolling back volumes, databases, migrations, or external services.
 - A hosted service, paid support, or an SLA.
 - A browser UI in v1.
 - User accounts, passwords, or sessions in v1.
@@ -472,6 +488,7 @@ replace the node proxy. Shared storage across machines is not promised.
 | External ingress | Not supported | One stack and one support surface; the adapter is internal, not a plugin API. |
 | Tenancy | Multiple projects per instance, single operator | Use the whole server without multi-user complexity. |
 | Source of truth | File for authoring; SQLite for runtime | Git review and CI stay authoritative; the daemon can reconcile after reboot. |
+| Rollback model | New deployment from a snapshot | Append-only history; no pin or override state. |
 | API level | High-level, spec-oriented | Clients express outcomes; the daemon owns the deploy sequence. |
 | Scripts | Client-side API clients | No scripting runtime or sandbox inside the daemon. |
 | Object model | Server → projects → services → deployments | One app per project; one container per service in v1. |
@@ -480,7 +497,6 @@ replace the node proxy. Shared storage across machines is not promised.
 
 - Whether v1 ships a shell installer, distro packages, or both.
 - Whether the daemon API is a documented, stable contract in v1 or private to the CLI.
-- Whether `rollback` is a one-off runtime override or persists until the next `apply`.
 - Secret versioning for exact rollback reproduction.
 - Whether `hardvoxel backup --include-secrets` emits an encrypted archive or delegates encryption
   to the operator.

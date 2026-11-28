@@ -19,10 +19,12 @@
 - [ ] Deploy pipeline: pull, start unrouted, health-check, route, verify, drain, stop.
 - [ ] Port-conflict detection for 80/443 before any change.
 - [ ] CLI over HTTPS with `hardvoxel login` (hidden prompt, `0600`); `hardvoxel admin` over SSH.
-- [ ] `rollback` from deployment history.
+- [ ] Deployment snapshots and rollback: a new current deployment from an older snapshot, with
+      10-deployment / 30-day retention.
 - [ ] Installer and systemd units.
 - [ ] Tests: unit, Caddy config rendering, auth scopes, expiry, revocation, secret permissions,
-      missing secrets, env fallback, rotation, and an integration pass with Podman.
+      missing secrets, env fallback, rotation, rollback creates a new deployment, and an integration
+      pass with Podman.
 - [ ] Update the site and docs to describe the daemon, HTTPS control plane, and embedded ingress.
 - [ ] Document that `deploy` tokens are high-trust; container isolation is future work.
 

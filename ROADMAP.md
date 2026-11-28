@@ -29,7 +29,7 @@ local daemon and an embedded Caddy ingress.
 - [ ] Read-only secret mounts with per-container UID/GID; explicit environment fallback.
 - [ ] `hardvoxel secret set/list/rm` over SSH admin.
 - [ ] Secret validation before deploy.
-- [ ] Health-gated deploys with draining and rollback.
+- [ ] Health-gated deploys with draining, immutable deployment snapshots, and rollback.
 - [ ] CLI over HTTPS with `hardvoxel login`, plus `hardvoxel admin` over SSH.
 - [ ] `up`, `down`, `status`, `logs`, and `rollback`.
 - [ ] Installer and systemd units.
