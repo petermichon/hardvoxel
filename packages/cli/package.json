@@ -4,7 +4,8 @@
   "description": "Deploy prebuilt OCI images to your own Docker host.",
   "type": "module",
   "bin": {
-    "hardvoxel": "./bin/hardvoxel.js"
+    "hardvoxel": "./bin/hardvoxel.js",
+    "hardvoxel-daemon": "./bin/hardvoxel-daemon.js"
   },
   "files": [
     "bin",

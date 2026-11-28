@@ -1,15 +1,21 @@
 # TODO
 
+## Done
+
+- [x] Config schema v1: domains, container ports, secrets, healthchecks, resources, strategies.
+- [x] Daemon skeleton: loopback API, admin socket, SQLite state, systemd unit.
+- [x] Bearer token creation, listing, revocation, hashing, scopes, expiry, and auth.
+- [x] `GET /v1/health`, `POST apply`, project and deployment read endpoints.
+
 ## v1 platform
 
-- [ ] Daemon skeleton: HTTPS API on loopback, admin socket, SQLite state, systemd unit.
-- [ ] Token auth: `hv_` tokens, SHA-256 hashes, `deploy`/`read` scopes, 90-day expiry, rotation,
-      revocation, rate limiting, audit log.
-- [ ] Admin socket: token create/list/rotate/revoke, audit, volume deletion.
+- [ ] Token rotation, expiry warnings, rate limiting, and audit log.
+- [ ] Admin volume deletion and audit views.
 - [ ] Control-plane Caddy block: dedicated hostname, TLS, static route.
 - [ ] Runtime adapter interface and CLI implementation (`execFile`, JSON outputs); map common
       errors into a small taxonomy.
 - [ ] Runtime integration: Docker/Podman, per-project network, stable aliases, health checks.
+- [ ] Normalize published ports to `127.0.0.1` unless the config sets a host IP.
 - [ ] Secret store: `0600` project files, metadata in SQLite, no values in the spec or database.
 - [ ] Secret delivery: per-container `0400` copies, service `uid`/`gid`, read-only mounts; env fallback.
 - [ ] `hardvoxel secret set/list/rm` over SSH admin; hidden prompt and stdin.

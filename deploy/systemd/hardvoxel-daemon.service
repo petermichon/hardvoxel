@@ -1,0 +1,39 @@
+[Unit]
+Description=Hardvoxel daemon
+Documentation=https://hardvoxel.com/docs
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=simple
+User=root
+Group=hardvoxel
+Environment=HARDVOXEL_DOCKER=docker
+ExecStart=/usr/local/bin/hardvoxel-daemon \
+  --state /var/lib/hardvoxel/state.db \
+  --api 127.0.0.1:8787 \
+  --admin-socket /run/hardvoxel/admin.sock
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=30
+KillSignal=SIGTERM
+UMask=0077
+
+RuntimeDirectory=hardvoxel
+RuntimeDirectoryMode=0750
+StateDirectory=hardvoxel
+StateDirectoryMode=0700
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=read-only
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

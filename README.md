@@ -20,7 +20,7 @@ provision servers, or terminate TLS.
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22 or newer (Node.js 24 or newer for the daemon)
 - Docker Engine, running locally
 - Bun for the workspace scripts
 
@@ -56,6 +56,27 @@ node packages/cli/bin/hardvoxel.js up
 ```
 
 Open <http://localhost:8080>.
+
+## Daemon (v1 target)
+
+The daemon skeleton stores applied specs and exposes the control API. It does not deploy containers
+yet.
+
+```bash
+node packages/cli/bin/hardvoxel-daemon.js \
+  --state /tmp/hardvoxel/state.db \
+  --api 127.0.0.1:8787 \
+  --admin-socket /tmp/hardvoxel/admin.sock
+```
+
+Create the first token over the local admin socket:
+
+```bash
+curl --unix-socket /tmp/hardvoxel/admin.sock \
+  -X POST http://localhost/v1/admin/tokens \
+  -H 'content-type: application/json' \
+  -d '{"name":"laptop","scopes":["deploy","read"]}'
+```
 
 ## Documentation
 

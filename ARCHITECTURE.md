@@ -1,7 +1,7 @@
 # Architecture
 
-Status: **v1 target.** The current alpha CLI is the foundation. The daemon, state, and embedded
-ingress described here are not shipped yet.
+Status: **v1 target.** The alpha CLI is the foundation. The config schema and daemon skeleton are
+in place; the runtime adapter, ingress, and installer are not shipped yet.
 
 ## Product contract
 

@@ -25,7 +25,7 @@ bun run format:check
 ## Layout
 
 - `web/` — TanStack Start site. Routes in `web/src/routes`, copy and data in `web/src/content`.
-- `packages/cli/` — plain Node.js ESM CLI. Config validation in `packages/cli/src/config.js`.
+- `packages/cli/` — plain Node.js ESM CLI and daemon. Config validation in `packages/cli/src/config.js`.
 - `web/tests/` and `packages/cli/test/` — tests.
 
 ## Rules
