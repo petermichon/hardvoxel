@@ -19,12 +19,14 @@ local daemon and an embedded Caddy ingress.
 ## v1: single-server platform
 
 - [ ] Daemon with an HTTPS API, a local admin socket, and SQLite state.
-- [ ] Bearer-token authentication with scopes, revocation, and an audit log.
+- [ ] Bearer-token auth: `hv_` tokens, `deploy`/`read` scopes, SHA-256 hashes, expiry, rotation,
+      revocation, rate limiting, and an audit log.
+- [ ] Token management and audit over the local admin socket.
 - [ ] Embedded Caddy ingress: app hostnames, automatic TLS, atomic route changes.
 - [ ] Static control-plane hostname and route, separate from app hostnames.
 - [ ] Runtime adapter for Docker and Podman.
 - [ ] Health-gated deploys with draining and rollback.
-- [ ] CLI over HTTPS, plus `hardvoxel admin` over SSH.
+- [ ] CLI over HTTPS with `hardvoxel login`, plus `hardvoxel admin` over SSH.
 - [ ] `up`, `down`, `status`, `logs`, and `rollback`.
 - [ ] Installer and systemd units.
 - [ ] Migration from the alpha `hardvoxel.json` workflow.
@@ -33,6 +35,7 @@ local daemon and an embedded Caddy ingress.
 ## v1.x
 
 - [ ] Optional browser UI.
+- [ ] Container isolation hardening for deploy tokens.
 - [ ] `hardvoxel init` to generate a starter config.
 - [ ] Machine-readable JSON output for `status`.
 - [ ] Environment management.

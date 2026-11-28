@@ -33,7 +33,8 @@ Hardvoxel is not a hosted service. There is no pricing, paid plan, or support co
 - **Service** — one container in v1. A project has one or more.
 - **Deployment** — one applied version of a project: an immutable record of the spec, image
   digests, and result.
-- **Token** — a bearer credential for the HTTPS API. V1 has no user accounts.
+- **Token** — a scoped bearer credential for the HTTPS API (`deploy` or `read`). Admin operations
+  use the local socket.
 
 A project is not a user account, repository, or organisation. One server can host multiple
 projects, routed by domain.
@@ -122,26 +123,22 @@ It is not a public plugin API, and there is no supported external-ingress mode.
 The public API is high-level and spec-oriented. It represents user outcomes, not implementation
 steps. Clients do not create containers, networks, or routes directly.
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `POST` | `/v1/projects/{project}/apply` | Apply a spec; returns a deployment id (`202`). |
-| `GET` | `/v1/projects/{project}` | Desired vs running state, health, and routes. |
-| `GET` | `/v1/projects/{project}/deployments` | Deployment history. |
-| `GET` | `/v1/deployments/{id}` | Deployment progress and result. |
-| `GET` | `/v1/deployments/{id}/events` | Progress stream. |
-| `POST` | `/v1/projects/{project}/rollback` | Activate an older deployment. |
-| `POST` | `/v1/projects/{project}/stop` | Stop containers, keep state. |
-| `DELETE` | `/v1/projects/{project}` | Destroy; volumes only with an explicit flag. |
-| `GET` | `/v1/projects/{project}/logs` | Container and proxy logs. |
-| `GET` | `/v1/health` | Unauthenticated minimal status. |
-| `GET` | `/v1/tokens` | List tokens. |
-| `POST` | `/v1/tokens` | Create a token; plaintext shown once. |
-| `DELETE` | `/v1/tokens/{id}` | Revoke a token. |
-| `GET` | `/v1/audit` | Audit log. |
+| Method | Path | Scope | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/v1/projects/{project}/apply` | `deploy` | Apply a spec; returns a deployment id (`202`). |
+| `GET` | `/v1/projects/{project}` | `read` | Desired vs running state, health, and routes. |
+| `GET` | `/v1/projects/{project}/deployments` | `read` | Deployment history. |
+| `GET` | `/v1/deployments/{id}` | `read` | Deployment progress and result. |
+| `GET` | `/v1/deployments/{id}/events` | `read` | Progress stream. |
+| `POST` | `/v1/projects/{project}/rollback` | `deploy` | Activate an older deployment. |
+| `POST` | `/v1/projects/{project}/stop` | `deploy` | Stop containers, keep state. |
+| `DELETE` | `/v1/projects/{project}` | `deploy` | Destroy containers and networks; volumes require local admin. |
+| `GET` | `/v1/projects/{project}/logs` | `read` | Container and proxy logs. |
+| `GET` | `/v1/health` | public | Minimal status. |
 
-- All endpoints except `/v1/health` require `Authorization: Bearer hv_...`. Token scopes and
-  bootstrap are open questions.
-- The control plane is root-equivalent. Treat every token as a root credential.
+- All endpoints except `/v1/health` require `Authorization: Bearer hv_...`.
+- Token management and audit are not on HTTPS. They run over SSH against the local admin socket.
+- The control plane is root-equivalent. Treat every token as a high-trust credential.
 - The local admin socket uses peer credentials and is not exposed over HTTPS.
 - `apply` is idempotent and serialized per project. It returns `202`; validation errors return
   `400`; runtime failures are recorded on the deployment while the old version keeps serving.
@@ -150,6 +147,57 @@ steps. Clients do not create containers, networks, or routes directly.
 - Scripts and CI are clients of this API. They run on the client, not inside the daemon.
 - The CLI is the reference client and may compose read-modify-write operations for UX.
 - Low-level admin or debug endpoints, if any, are separate and unsupported.
+
+## Authentication
+
+The HTTPS API uses opaque bearer tokens. V1 has no user accounts or sessions.
+
+### Scopes
+
+- `deploy` — apply, rollback, stop, destroy containers and networks, logs, status.
+- `read` — status, deployments, logs.
+
+Admin operations are not on the HTTPS API. They run over SSH against the local admin socket:
+token create/list/revoke/rotate, audit, upgrade, and volume deletion.
+
+There is no `admin` API scope. Following OWASP's management-endpoint guidance, the management
+surface stays off the public internet.
+
+`deploy` is still high-trust: it can run arbitrary containers. The real boundary is container
+isolation, which is future work. A deploy token cannot create tokens or delete volumes through the
+API.
+
+### Token format
+
+```text
+hv_<id>_<secret>
+```
+
+- 256-bit random secret.
+- SHA-256 hash at rest; constant-time comparison.
+- Name, scopes, created, last used, expires, revoked.
+- Shown once. Never logged, never accepted in a URL.
+
+### Lifecycle
+
+- Expire by default after 90 days.
+- `--no-expiry` is explicit and warns.
+- `hardvoxel admin token rotate` creates a replacement before revoking the old token.
+- Revocation is immediate.
+- `hardvoxel admin token list` shows names, scopes, last used, and expiry.
+
+### Bootstrap and storage
+
+- The installer ends with `hardvoxel admin token create --name laptop`.
+- `hardvoxel login` prompts for the token with hidden input and stores it `0600`.
+- `--token` on the command line is avoided; CI uses a secret or environment variable.
+- The CLI stores the server URL and token in `~/.config/hardvoxel/config.json`.
+
+### Abuse controls
+
+- Failed authentication is rate-limited.
+- Authentication failures, token changes, deployments, and volume deletion are audited.
+- Audit and token metadata are readable only over the local admin socket.
 
 ## Why Caddy
 
@@ -272,9 +320,16 @@ daemon's lifetime.
 - Public surface: SSH, 80, and 443. Application ports are not published by default.
 - The control plane is public on 443 with bearer-token auth. It is root-equivalent; treat every
   token as a root credential.
-- Tokens are high-entropy, hashed at rest, revocable, and shown once. Plaintext is never logged.
+- Tokens are high-entropy, hashed at rest, scoped, expiring, revocable, and shown once. Plaintext is
+  never logged.
+- The HTTPS API exposes only `deploy` and `read` scopes. Token management and audit are local-only.
+- A `deploy` token is high-trust: it can run arbitrary containers. Container isolation is future
+  work; API scopes do not change that.
 - V1 has no user accounts, passwords, or sessions.
-- SSH is the break-glass path for install, upgrade, token recovery, and host-level work.
+- SSH is the break-glass path for install, upgrade, token recovery, and host-level work. It
+  inherits the host's SSH authentication, including MFA if configured.
+- A leaked `deploy` token cannot mint new tokens, read the audit log, or delete volumes through the
+  API.
 - The control-plane hostname is separate from every app hostname.
 - Caddy's admin endpoint binds to a Unix socket owned by root and the `hardvoxel` group.
 - The daemon admin socket uses peer credentials; only root and the `hardvoxel` group can use it.
@@ -329,7 +384,10 @@ replace the node proxy. Shared storage across machines is not promised.
 | Control model | CLI + daemon + HTTPS API | The CLI should not need root; normal operations use the API. |
 | Control plane | HTTPS via Caddy | Normal operations over 443 with bearer-token auth. |
 | Admin access | SSH + local socket | Break-glass only; no network listener. |
-| Authentication | Bearer tokens | No UI, so no sessions or passwords in v1; tokens are hashed and revocable. |
+| Authentication | Bearer tokens, `deploy` / `read` | No UI; admin stays local. |
+| Token management | Local admin socket only | OWASP management-endpoint guidance; smaller public surface. |
+| Token format | `hv_<id>_<secret>`, SHA-256 | Opaque, revocable, scannable, shown once. |
+| Token lifetime | 90 days by default | Expiry, rotation, and revocation are built in. |
 | Browser UI | Not in v1 | CLI and API first. |
 | Control-plane hostname | Required | TLS and routing; separate from app hosts. |
 | State | SQLite | Single host, embedded, no database server. |
@@ -345,8 +403,6 @@ replace the node proxy. Shared storage across machines is not promised.
 ## Open questions
 
 - Whether v1 ships a shell installer, distro packages, or both.
-- Token bootstrap: installer-generated or `hardvoxel admin token create`.
-- Token scopes: a single admin token or `admin` / `deploy` / `read`.
 - Whether the daemon API is a documented, stable contract in v1 or private to the CLI.
 - Whether `rollback` is a one-off runtime override or persists until the next `apply`.
 - Secrets at rest: separate `0600` environment files, encrypted state, or Docker secrets.
@@ -354,3 +410,4 @@ replace the node proxy. Shared storage across machines is not promised.
 - Rootless runtime support. Rootful Docker is the v1 assumption.
 - Backup and restore of named volumes.
 - Rate-limit and audit-retention policy.
+- How to constrain `deploy` tokens further with container isolation.
