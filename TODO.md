@@ -1,20 +1,36 @@
 # TODO
 
-## Now
+## v1 platform
 
-- [ ] Run the CLI against a real Docker host: `up`, `down`, `status`, `logs`.
-- [ ] Add `hardvoxel init` when the config schema settles.
-- [ ] Update every GitHub link to `petermichon/hardvoxel`.
-- [ ] Create the public repo and push the fresh history.
-- [ ] Deploy the site and submit the sitemap.
+- [ ] Daemon skeleton: Unix-socket HTTP API, SQLite state, systemd unit.
+- [ ] Runtime adapter: Docker/Podman, per-project network, stable aliases, health checks.
+- [ ] Caddy supervisor: bootstrap config, admin Unix socket, resume on boot, certificate storage.
+- [ ] Ingress adapter: apply/add/remove/health, route model, atomic `POST /load`.
+- [ ] Deploy pipeline: pull, start unrouted, health-check, route, verify, drain, stop.
+- [ ] Port-conflict detection for 80/443 before any change.
+- [ ] CLI client for the daemon; keep the direct Docker path as a development fallback.
+- [ ] `rollback` from deployment history.
+- [ ] Installer and systemd units.
+- [ ] Tests: unit, Caddy config rendering, and an integration pass with Podman.
+- [ ] Update the site and docs to describe the daemon and embedded ingress.
+
+## v1.x
+
+- [ ] `hardvoxel init`.
+- [ ] Machine-readable JSON output for `status`.
+- [ ] Environment management.
+- [ ] Named-volume backup and restore.
+- [ ] Access logs and metrics in the CLI.
+- [ ] External ingress mode.
+- [ ] Preview deployments.
+- [ ] Versioned docs.
+- [ ] Dependency updates and release automation.
 
 ## Scalability
 
 - [ ] Multi-server capacity pooling: agent, scheduler, state, networking, volumes.
-- [ ] Health checks and start order.
-- [ ] Versioned docs.
-- [ ] Preview deploys.
-- [ ] Dependency updates and release automation.
+- [ ] Global ingress and per-node routing.
+- [ ] Failure handling and rescheduling.
 
 ## SEO launch (after v1)
 

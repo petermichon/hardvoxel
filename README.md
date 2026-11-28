@@ -4,8 +4,9 @@ Hardvoxel is an open-source CLI for deploying prebuilt OCI images to your own Do
 
 It is **not** a hosted service. There is no pricing, paid plan, or support commitment.
 
-Status: **alpha**. The current release targets one Docker host. Turning one or more servers into
-a single capacity pool is on the [roadmap](ROADMAP.md).
+Status: **alpha**. The current release is a thin CLI that targets one Docker host. The v1 target is
+a single-server appliance with a local daemon and an embedded Caddy ingress; see
+[ARCHITECTURE.md](ARCHITECTURE.md). Multi-server capacity pooling is later.
 
 ## What it does
 

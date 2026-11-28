@@ -5,6 +5,7 @@ Instructions for AI agents and humans working in this repository.
 ## Read first
 
 - `README.md`
+- `ARCHITECTURE.md`
 - `ROADMAP.md`
 - `DESIGN.md`
 - `CONTRIBUTING.md`
