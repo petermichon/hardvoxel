@@ -12,10 +12,14 @@ It owns:
 - ports 80 and 443;
 - the container runtime integration (Docker Engine or Podman);
 - domains, routes, and TLS;
+- the HTTPS control plane and its authentication;
 - deployment state and health;
 - the deploy lifecycle: pull, start unrouted, health-check, route, drain, stop.
 
 It expects a dedicated server. In v1 it does not share ports 80/443 with an existing proxy.
+
+Normal operations use HTTPS with a bearer token. SSH is reserved for system administration and
+recovery. A dedicated control-plane hostname is required.
 
 Hardvoxel is the ingress. A CDN or load balancer may sit in front of it, but Hardvoxel does not run
 alongside or configure another reverse proxy. There is no supported bring-your-own-proxy mode.
@@ -29,6 +33,7 @@ Hardvoxel is not a hosted service. There is no pricing, paid plan, or support co
 - **Service** — one container in v1. A project has one or more.
 - **Deployment** — one applied version of a project: an immutable record of the spec, image
   digests, and result.
+- **Token** — a bearer credential for the HTTPS API. V1 has no user accounts.
 
 A project is not a user account, repository, or organisation. One server can host multiple
 projects, routed by domain.
@@ -36,22 +41,24 @@ projects, routed by domain.
 ## Planes
 
 ```text
-hardvoxel CLI (unprivileged)
-        │  HTTP over a Unix socket
-        ▼
-hardvoxel daemon
-        ├── state (SQLite)
-        ├── reconciler
-        ├── runtime adapter  → Docker / Podman
-        └── ingress adapter  → Caddy (managed, 80/443)
+operator CLI ── HTTPS + token ──> Caddy ──> daemon API (loopback)
+operator SSH ──> hardvoxel admin ──> daemon admin socket
+app users    ── HTTPS ─────────> Caddy ──> app containers
+
+daemon
+  ├── state (SQLite)
+  ├── reconciler
+  ├── runtime adapter  → Docker / Podman
+  └── ingress adapter  → Caddy (managed, 80/443)
 ```
 
 ### CLI
 
 - Thin client. It does not need direct access to the Docker socket.
-- Talks to the daemon over `/run/hardvoxel/hardvoxel.sock`.
+- Uses HTTPS with a bearer token for normal operations.
 - Reads `hardvoxel.json`, sends the spec to the daemon, and renders deployment progress.
 - Supports `--json` for scripts. The API is the stable interface, not CLI output.
+- `hardvoxel admin ...` runs over SSH against the local admin socket.
 - Keeps `up`, `down`, `status`, and `logs`, and adds `rollback`.
 - The current direct-to-Docker path remains a development fallback until the daemon is ready.
 
@@ -59,17 +66,22 @@ hardvoxel daemon
 
 - One process, started by systemd.
 - Owns the Docker/Podman socket.
-- Stores the last applied spec and deployment history in SQLite.
-- Exposes a high-level, spec-oriented local HTTP API for the CLI, scripts, and a future UI.
+- Stores the last applied spec, deployment history, token hashes, and audit records in SQLite.
+- Listens on `127.0.0.1:8787` for the Caddy-proxied HTTPS API.
+- Listens on `/run/hardvoxel/admin.sock` for local admin commands, authenticated by peer
+  credentials.
+- Exposes a high-level, spec-oriented API for the CLI, scripts, and a future UI.
 - Reconciles on boot and after crashes: containers, routes, and certificates converge to the
   stored state.
 
 ### State and source of truth
 
 - SQLite at `/var/lib/hardvoxel/state.db` is the **runtime** source of truth: last applied spec,
-  deployment history, health, and certificate records.
+  deployment history, health, certificate records, token hashes, and audit records.
 - `hardvoxel.json` is the **authoring** source of truth. It lives in the project repository.
 - The rule: the file says what you want; the daemon says what is running. `apply` makes them match.
+- V1 has no user accounts. Tokens are the only control-plane credentials; plaintext tokens are
+  never stored.
 - `apply` is a full reconcile. Services removed from the file are stopped; volumes are preserved.
   Destructive removals require `--prune`.
 - `rollback` activates an older deployment. The v1 default is a runtime override until the next
@@ -121,7 +133,16 @@ steps. Clients do not create containers, networks, or routes directly.
 | `POST` | `/v1/projects/{project}/stop` | Stop containers, keep state. |
 | `DELETE` | `/v1/projects/{project}` | Destroy; volumes only with an explicit flag. |
 | `GET` | `/v1/projects/{project}/logs` | Container and proxy logs. |
+| `GET` | `/v1/health` | Unauthenticated minimal status. |
+| `GET` | `/v1/tokens` | List tokens. |
+| `POST` | `/v1/tokens` | Create a token; plaintext shown once. |
+| `DELETE` | `/v1/tokens/{id}` | Revoke a token. |
+| `GET` | `/v1/audit` | Audit log. |
 
+- All endpoints except `/v1/health` require `Authorization: Bearer hv_...`. Token scopes and
+  bootstrap are open questions.
+- The control plane is root-equivalent. Treat every token as a root credential.
+- The local admin socket uses peer credentials and is not exposed over HTTPS.
 - `apply` is idempotent and serialized per project. It returns `202`; validation errors return
   `400`; runtime failures are recorded on the deployment while the old version keeps serving.
 - There are no CRUD endpoints for domains, environment variables, or individual services. Those
@@ -142,6 +163,7 @@ semantics; Caddy terminates HTTP and TLS.
 - Automatic HTTPS, HTTP-to-HTTPS redirects, HTTP/3, access logs, metrics, and upstream status are
   built in.
 - It does not need the Docker socket. The daemon drives it over a permissioned Unix socket.
+- It terminates TLS for the control-plane hostname and proxies it to the daemon on loopback.
 - It is a single static binary, which keeps the appliance small.
 
 Traefik was considered and rejected as the primary data plane. Its API is read-only, its dynamic
@@ -193,12 +215,17 @@ application down.
 ## Process model
 
 - `hardvoxel-daemon.service` runs the daemon.
-- `hardvoxel-caddy.service` runs Caddy from a minimal bootstrap config that only exposes the
-  admin socket, then resumes its last saved config after a restart.
+- `hardvoxel-caddy.service` runs Caddy from a bootstrap config that exposes the admin socket and
+  the static control-plane route, then resumes its last saved config after a restart.
 - Caddy autosaves the active config under `/var/lib/hardvoxel/caddy`; the service sets
   `XDG_CONFIG_HOME` so the path is stable.
-- The daemon applies routes with `POST /load`; it does not rewrite a Caddyfile and reload by
-  signal.
+- Caddy runs one HTTP server with two route sets: a static control-plane route for the API hostname,
+  and an app route set managed by the daemon.
+- The daemon replaces only the app route set through Caddy's config API, targeted by `@id`; it never
+  rewrites the control-plane route.
+- The control-plane route is in the bootstrap config, so a bad app deploy cannot lock the operator
+  out.
+- The daemon does not rewrite a Caddyfile and reload by signal.
 - If the daemon crashes, Caddy keeps serving the last config and containers keep running.
 - If Caddy crashes, systemd restarts it and it resumes the last working config.
 - On boot, the daemon reconciles containers and routes against SQLite.
@@ -220,7 +247,11 @@ daemon's lifetime.
 
 - Caddy joins each project network with `docker network connect` when the project is created and
   leaves it when the project is removed.
+- Caddy routes by host: the control-plane hostname goes to the daemon, app hostnames go to project
+  containers.
+- The control-plane hostname must be separate from every app hostname.
 - Routes target the stable service alias and the container port, never a published host port.
+- App containers cannot reach the admin socket.
 - The route is re-applied on every deploy, so a recreated container's address is picked up.
 - If the runtime changes a container's address outside a deploy, Caddy's dynamic upstream
   resolution or a reconcile pass corrects it.
@@ -228,6 +259,8 @@ daemon's lifetime.
 ## TLS
 
 - Automatic HTTPS per host with HTTP-01 in v1.
+- Caddy issues a certificate for the control-plane hostname the same way.
+- The control-plane hostname must resolve to the server before HTTPS works.
 - DNS-01 for wildcard certificates comes later and needs a Caddy build with the DNS provider
   module.
 - On-demand TLS with an authorization endpoint in the daemon comes later, for customer domains.
@@ -237,10 +270,19 @@ daemon's lifetime.
 ## Security
 
 - Public surface: SSH, 80, and 443. Application ports are not published by default.
+- The control plane is public on 443 with bearer-token auth. It is root-equivalent; treat every
+  token as a root credential.
+- Tokens are high-entropy, hashed at rest, revocable, and shown once. Plaintext is never logged.
+- V1 has no user accounts, passwords, or sessions.
+- SSH is the break-glass path for install, upgrade, token recovery, and host-level work.
+- The control-plane hostname is separate from every app hostname.
 - Caddy's admin endpoint binds to a Unix socket owned by root and the `hardvoxel` group.
+- The daemon admin socket uses peer credentials; only root and the `hardvoxel` group can use it.
 - Caddy never receives the Docker socket. Only the daemon does.
-- The CLI runs unprivileged and talks to the daemon socket.
+- The CLI runs unprivileged and talks to the daemon over HTTPS or the admin socket.
 - The daemon has the effective privileges of the Docker socket. This is documented, not hidden.
+- Failed authentication is rate-limited and audited. Deployments and token changes are audited.
+- The access log configuration excludes `Authorization` headers.
 - Port conflicts on 80/443 fail before any container is changed.
 - State files and certificates are `0600`/`0700` where possible.
 - Secret storage is an open question. Values are never returned by the CLI or API, and files are
@@ -266,7 +308,10 @@ replace the node proxy. Shared storage across machines is not promised.
 - Kubernetes.
 - Multi-server scheduling.
 - A hosted service, paid support, or an SLA.
-- A web UI.
+- A browser UI in v1.
+- User accounts, passwords, or sessions in v1.
+- A public signup or multi-tenant control plane.
+- A hosted DNS or wildcard-certificate service.
 - External ingress integration, or running alongside another reverse proxy. The ingress adapter is
   internal.
 - A public CRUD API for individual resources. The API is spec-oriented.
@@ -281,7 +326,12 @@ replace the node proxy. Shared storage across machines is not promised.
 | Ingress ownership | Embedded | Deploy semantics, TLS, and observability require control of the proxy. |
 | Data plane | Caddy | Read-write atomic admin API; TLS and HTTP/3 built in; no Docker socket. |
 | Own proxy | No | Undifferentiated and high-risk; the deploy lifecycle is the product. |
-| Control model | CLI + daemon | The CLI should not need root or the Docker socket; the daemon reconciles. |
+| Control model | CLI + daemon + HTTPS API | The CLI should not need root; normal operations use the API. |
+| Control plane | HTTPS via Caddy | Normal operations over 443 with bearer-token auth. |
+| Admin access | SSH + local socket | Break-glass only; no network listener. |
+| Authentication | Bearer tokens | No UI, so no sessions or passwords in v1; tokens are hashed and revocable. |
+| Browser UI | Not in v1 | CLI and API first. |
+| Control-plane hostname | Required | TLS and routing; separate from app hosts. |
 | State | SQLite | Single host, embedded, no database server. |
 | Runtime | Docker / Podman | Existing ecosystem and images; containerd alone is not a user-facing runtime. |
 | Target host | Dedicated server | Owning 80/443 is the contract; there is no shared-edge mode. |
@@ -295,10 +345,12 @@ replace the node proxy. Shared storage across machines is not promised.
 ## Open questions
 
 - Whether v1 ships a shell installer, distro packages, or both.
-- Remote CLI transport: an SSH tunnel to the local socket, or an authenticated HTTPS daemon API.
+- Token bootstrap: installer-generated or `hardvoxel admin token create`.
+- Token scopes: a single admin token or `admin` / `deploy` / `read`.
 - Whether the daemon API is a documented, stable contract in v1 or private to the CLI.
 - Whether `rollback` is a one-off runtime override or persists until the next `apply`.
 - Secrets at rest: separate `0600` environment files, encrypted state, or Docker secrets.
 - How much of the existing `hardvoxel.json` schema survives the move to daemon-managed state.
 - Rootless runtime support. Rootful Docker is the v1 assumption.
 - Backup and restore of named volumes.
+- Rate-limit and audit-retention policy.

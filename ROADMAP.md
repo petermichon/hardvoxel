@@ -18,10 +18,13 @@ local daemon and an embedded Caddy ingress.
 
 ## v1: single-server platform
 
-- [ ] Daemon with a local API and SQLite state.
+- [ ] Daemon with an HTTPS API, a local admin socket, and SQLite state.
+- [ ] Bearer-token authentication with scopes, revocation, and an audit log.
+- [ ] Embedded Caddy ingress: app hostnames, automatic TLS, atomic route changes.
+- [ ] Static control-plane hostname and route, separate from app hostnames.
 - [ ] Runtime adapter for Docker and Podman.
-- [ ] Embedded Caddy ingress: domains, automatic TLS, atomic route changes.
 - [ ] Health-gated deploys with draining and rollback.
+- [ ] CLI over HTTPS, plus `hardvoxel admin` over SSH.
 - [ ] `up`, `down`, `status`, `logs`, and `rollback`.
 - [ ] Installer and systemd units.
 - [ ] Migration from the alpha `hardvoxel.json` workflow.
@@ -29,6 +32,7 @@ local daemon and an embedded Caddy ingress.
 
 ## v1.x
 
+- [ ] Optional browser UI.
 - [ ] `hardvoxel init` to generate a starter config.
 - [ ] Machine-readable JSON output for `status`.
 - [ ] Environment management.
@@ -44,7 +48,6 @@ local daemon and an embedded Caddy ingress.
 - [ ] One pool of memory, CPU, and storage.
 - [ ] Global ingress in front of per-node proxies.
 - [ ] Failure handling and rescheduling.
-- [ ] Optional web UI.
 
 ## Not in scope
 
@@ -52,3 +55,4 @@ local daemon and an embedded Caddy ingress.
 - Managing a Kubernetes cluster.
 - A hosted service, paid support, or an SLA.
 - Running alongside or configuring another reverse proxy. Hardvoxel is the ingress.
+- A hosted DNS or wildcard-certificate service.

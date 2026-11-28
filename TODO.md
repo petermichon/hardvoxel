@@ -2,20 +2,23 @@
 
 ## v1 platform
 
-- [ ] Daemon skeleton: Unix-socket HTTP API, SQLite state, systemd unit.
+- [ ] Daemon skeleton: HTTPS API on loopback, admin socket, SQLite state, systemd unit.
+- [ ] Token auth: hashed tokens, scopes, revocation, rate limiting, audit log.
+- [ ] Control-plane Caddy block: dedicated hostname, TLS, static route.
 - [ ] Runtime adapter: Docker/Podman, per-project network, stable aliases, health checks.
 - [ ] Caddy supervisor: bootstrap config, admin Unix socket, resume on boot, certificate storage.
-- [ ] Ingress adapter: apply/add/remove/health, route model, atomic `POST /load`.
+- [ ] Ingress adapter: app server block only; never rewrite the control-plane block.
 - [ ] Deploy pipeline: pull, start unrouted, health-check, route, verify, drain, stop.
 - [ ] Port-conflict detection for 80/443 before any change.
-- [ ] CLI client for the daemon; keep the direct Docker path as a development fallback.
+- [ ] CLI over HTTPS with token storage; `hardvoxel admin` over SSH.
 - [ ] `rollback` from deployment history.
 - [ ] Installer and systemd units.
-- [ ] Tests: unit, Caddy config rendering, and an integration pass with Podman.
-- [ ] Update the site and docs to describe the daemon and embedded ingress.
+- [ ] Tests: unit, Caddy config rendering, auth, and an integration pass with Podman.
+- [ ] Update the site and docs to describe the daemon, HTTPS control plane, and embedded ingress.
 
 ## v1.x
 
+- [ ] Optional browser UI.
 - [ ] `hardvoxel init`.
 - [ ] Machine-readable JSON output for `status`.
 - [ ] Environment management.
@@ -45,3 +48,4 @@
 - [ ] Discord or Matrix. GitHub Discussions is enough.
 - [ ] Ads, affiliate links, or paid plans.
 - [ ] i18n until there is demand.
+- [ ] Hosted `*.hardvoxel.app` DNS/TLS service. Separate project; not a v1 dependency.
