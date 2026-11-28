@@ -21,7 +21,6 @@
 - [ ] Environment management.
 - [ ] Named-volume backup and restore.
 - [ ] Access logs and metrics in the CLI.
-- [ ] External ingress mode.
 - [ ] Preview deployments.
 - [ ] Versioned docs.
 - [ ] Dependency updates and release automation.

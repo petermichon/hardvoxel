@@ -34,7 +34,6 @@ local daemon and an embedded Caddy ingress.
 - [ ] Environment management.
 - [ ] Named-volume backup and restore.
 - [ ] Access logs and metrics in the CLI.
-- [ ] External ingress mode: use an existing Caddy or Traefik instead of the embedded one.
 - [ ] Preview deployments.
 - [ ] Versioned docs.
 
@@ -52,3 +51,4 @@ local daemon and an embedded Caddy ingress.
 - Building images or a build pipeline.
 - Managing a Kubernetes cluster.
 - A hosted service, paid support, or an SLA.
+- Running alongside or configuring another reverse proxy. Hardvoxel is the ingress.

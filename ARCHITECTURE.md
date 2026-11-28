@@ -17,6 +17,9 @@ It owns:
 
 It expects a dedicated server. In v1 it does not share ports 80/443 with an existing proxy.
 
+Hardvoxel is the ingress. A CDN or load balancer may sit in front of it, but Hardvoxel does not run
+alongside or configure another reverse proxy. There is no supported bring-your-own-proxy mode.
+
 Hardvoxel is not a hosted service. There is no pricing, paid plan, or support commitment.
 
 ## Planes
@@ -77,8 +80,9 @@ health()             proxy and upstream status
 certificates()       certificate state for a host
 ```
 
-The default implementation is Caddy. External ingress can be added later as a separate mode
-without rewriting the deploy engine.
+The implementation is Caddy. The interface is an internal seam: it keeps Caddy's config format out
+of the domain model and allows the data plane to be replaced without rewriting the deploy engine.
+It is not a public plugin API, and there is no supported external-ingress mode.
 
 ## Why Caddy
 
@@ -96,7 +100,7 @@ semantics; Caddy terminates HTTP and TLS.
 
 Traefik was considered and rejected as the primary data plane. Its API is read-only, its dynamic
 configuration is provider-driven, and container labels are immutable. That makes health-gated
-activation and draining awkward. It remains a reasonable external-ingress target later.
+activation and draining awkward. It is not a supported alternative.
 
 We do not write our own proxy. HTTP parsing, TLS, HTTP/2, HTTP/3, and connection draining are
 solved problems; the differentiator is the deploy lifecycle around them.
@@ -217,7 +221,8 @@ replace the node proxy. Shared storage across machines is not promised.
 - Multi-server scheduling.
 - A hosted service, paid support, or an SLA.
 - A web UI.
-- External ingress as the default mode. It is a later, explicit mode.
+- External ingress integration, or running alongside another reverse proxy. The ingress adapter is
+  internal.
 
 ## Decisions
 
@@ -229,12 +234,15 @@ replace the node proxy. Shared storage across machines is not promised.
 | Control model | CLI + daemon | The CLI should not need root or the Docker socket; the daemon reconciles. |
 | State | SQLite | Single host, embedded, no database server. |
 | Runtime | Docker / Podman | Existing ecosystem and images; containerd alone is not a user-facing runtime. |
-| Target host | Dedicated server | Owning 80/443 is the contract; shared-edge mode is a later adapter. |
+| Target host | Dedicated server | Owning 80/443 is the contract; there is no shared-edge mode. |
+| External ingress | Not supported | One stack and one support surface; the adapter is internal, not a plugin API. |
+| Tenancy | Multiple projects per instance, single operator | Use the whole server without multi-user complexity. |
 
 ## Open questions
 
 - Whether v1 ships a shell installer, distro packages, or both.
-- Whether external ingress lands in v1.x as `--ingress external` or waits for demand.
+- Remote CLI transport: an SSH tunnel to the local socket, or an authenticated HTTPS daemon API.
+- Secrets at rest: separate `0600` environment files, encrypted state, or Docker secrets.
 - How much of the existing `hardvoxel.json` schema survives the move to daemon-managed state.
 - Rootless runtime support. Rootful Docker is the v1 assumption.
 - Backup and restore of named volumes.
