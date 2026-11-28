@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS deployments (
   id TEXT PRIMARY KEY,
   project TEXT NOT NULL,
   spec_json TEXT NOT NULL,
+  image_digests_json TEXT,
   status TEXT NOT NULL,
   created_at TEXT NOT NULL,
   finished_at TEXT,
@@ -52,6 +53,12 @@ export class StateStore {
     this.db.exec("PRAGMA journal_mode = WAL;");
     this.db.exec("PRAGMA busy_timeout = 5000;");
     this.db.exec(SCHEMA);
+
+    const columns = this.db.prepare("PRAGMA table_info(deployments)").all();
+    if (!columns.some((column) => column.name === "image_digests_json")) {
+      this.db.exec("ALTER TABLE deployments ADD COLUMN image_digests_json TEXT");
+    }
+
     this.db
       .prepare("INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)")
       .run("schema_version", "1");
@@ -111,7 +118,7 @@ export class StateStore {
   getDeployment(id) {
     const row = this.db
       .prepare(
-        `SELECT id, project, spec_json, status, created_at, finished_at, error
+        `SELECT id, project, spec_json, image_digests_json, status, created_at, finished_at, error
          FROM deployments WHERE id = ?`,
       )
       .get(id);
@@ -120,6 +127,7 @@ export class StateStore {
       id: row.id,
       project: row.project,
       spec: JSON.parse(row.spec_json),
+      image_digests: row.image_digests_json ? JSON.parse(row.image_digests_json) : null,
       status: row.status,
       created_at: row.created_at,
       finished_at: row.finished_at,
@@ -130,18 +138,45 @@ export class StateStore {
   listDeployments(project) {
     return this.db
       .prepare(
-        `SELECT id, project, status, created_at, finished_at, error
+        `SELECT id, project, image_digests_json, status, created_at, finished_at, error
          FROM deployments WHERE project = ? ORDER BY created_at DESC`,
       )
       .all(project)
       .map((row) => ({
         id: row.id,
         project: row.project,
+        image_digests: row.image_digests_json ? JSON.parse(row.image_digests_json) : null,
         status: row.status,
         created_at: row.created_at,
         finished_at: row.finished_at,
         error: row.error,
       }));
+  }
+
+  updateDeployment(id, status, error = null) {
+    const finishedAt = status === "succeeded" || status === "failed"
+      ? new Date().toISOString()
+      : null;
+    this.db
+      .prepare("UPDATE deployments SET status = ?, error = ?, finished_at = ? WHERE id = ?")
+      .run(status, error, finishedAt, id);
+  }
+
+  setDeploymentDigests(id, digests) {
+    this.db
+      .prepare("UPDATE deployments SET image_digests_json = ? WHERE id = ?")
+      .run(JSON.stringify(digests), id);
+  }
+
+  markInterruptedDeployments() {
+    const now = new Date().toISOString();
+    this.db
+      .prepare(
+        `UPDATE deployments
+         SET status = 'failed', error = ?, finished_at = ?
+         WHERE status IN ('pending', 'running')`,
+      )
+      .run("daemon restarted before the deployment finished", now);
   }
 
   createToken(record) {

@@ -59,8 +59,8 @@ Open <http://localhost:8080>.
 
 ## Daemon (v1 target)
 
-The daemon skeleton stores applied specs and exposes the control API. It does not deploy containers
-yet.
+The daemon stores applied specs, deploys containers with a health gate, and exposes the control API.
+It does not manage Caddy/TLS or expose the CLI over HTTPS yet.
 
 ```bash
 node packages/cli/bin/hardvoxel-daemon.js \

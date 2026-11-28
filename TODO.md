@@ -6,27 +6,31 @@
 - [x] Daemon skeleton: loopback API, admin socket, SQLite state, systemd unit.
 - [x] Bearer token creation, listing, revocation, hashing, scopes, expiry, and auth.
 - [x] `GET /v1/health`, `POST apply`, project and deployment read endpoints.
+- [x] Runtime adapter: `docker`/`podman` via `execFile`, JSON outputs, error mapping.
+- [x] Deploy pipeline: pull, network, create, start, health gate, route set, remove old.
+- [x] Rolling and recreate strategies.
+- [x] Caddy ingress adapter: app route set by `@id`.
+- [x] Secret file mounts, env secrets, and missing-secret validation.
+- [x] Podman integration smoke test.
 
 ## v1 platform
 
+- [ ] Caddy control-plane bootstrap: `@id: hardvoxel-apps`, static route, TLS.
+- [ ] Caddy supervisor: systemd unit, admin socket, resume on boot, certificate storage.
+- [ ] Request draining before old container removal.
+- [ ] Verify the route after activation.
+- [ ] Reconcile containers and routes on daemon boot.
+- [ ] Reconcile Caddy routes after out-of-band container restarts.
+- [ ] Port-conflict detection for 80/443 before any change.
+- [ ] Normalize published ports to `127.0.0.1` unless the config sets a host IP.
 - [ ] Token rotation, expiry warnings, rate limiting, and audit log.
 - [ ] Admin volume deletion and audit views.
-- [ ] Control-plane Caddy block: dedicated hostname, TLS, static route.
-- [ ] Runtime adapter interface and CLI implementation (`execFile`, JSON outputs); map common
-      errors into a small taxonomy.
-- [ ] Runtime integration: Docker/Podman, per-project network, stable aliases, health checks.
-- [ ] Normalize published ports to `127.0.0.1` unless the config sets a host IP.
 - [ ] Secret store: `0600` project files, metadata in SQLite, no values in the spec or database.
-- [ ] Secret delivery: per-container `0400` copies, service `uid`/`gid`, read-only mounts; env fallback.
 - [ ] `hardvoxel secret set/list/rm` over SSH admin; hidden prompt and stdin.
-- [ ] Validate referenced secrets before deploy; fail without touching the old version.
 - [ ] Audit secret set/rm by name; never log values.
 - [ ] Installer warns if full-disk encryption is not detected.
-- [ ] Caddy supervisor: bootstrap config, admin Unix socket, resume on boot, certificate storage.
-- [ ] Ingress adapter: app route set only; never rewrite the control-plane route.
-- [ ] Deploy pipeline: pull, start unrouted, health-check, route, verify, drain, stop.
-- [ ] Port-conflict detection for 80/443 before any change.
 - [ ] CLI over HTTPS with `hardvoxel login` (hidden prompt, `0600`); `hardvoxel admin` over SSH.
+- [ ] `up`, `down`, `status`, `logs`, and `rollback`.
 - [ ] Deployment snapshots and rollback: a new current deployment from an older snapshot, with
       10-deployment / 30-day retention.
 - [ ] Installer and systemd units.
@@ -34,7 +38,6 @@
       missing secrets, env fallback, rotation, rollback creates a new deployment, and an integration
       pass with Podman.
 - [ ] Update the site and docs to describe the daemon, HTTPS control plane, and embedded ingress.
-- [ ] Document that `deploy` tokens are high-trust; container isolation is future work.
 
 ## v1.x
 

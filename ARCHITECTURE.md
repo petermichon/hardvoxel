@@ -1,7 +1,8 @@
 # Architecture
 
-Status: **v1 target.** The alpha CLI is the foundation. The config schema and daemon skeleton are
-in place; the runtime adapter, ingress, and installer are not shipped yet.
+Status: **v1 target.** The alpha CLI is the foundation. The config schema, daemon skeleton, runtime
+adapter, and health-gated deploy pipeline are in place; Caddy supervision, the HTTPS CLI, and the
+installer are not shipped yet.
 
 ## Product contract
 
@@ -119,10 +120,12 @@ imageDigest(image)
   remote engines, or a multi-server agent.
 - One Docker network per project. Caddy is attached to each project network it serves.
 - Containers get stable aliases such as `hv-<project>-<service>`.
-- HTTP services do not publish host ports. Only Caddy publishes 80/443.
-- Non-HTTP services may publish ports explicitly; the default bind is `127.0.0.1`.
-- Health is checked directly over the project network, or through the image's Docker
-  `HEALTHCHECK` when one exists.
+- HTTP services do not publish public host ports. Only Caddy publishes 80/443.
+- When a service declares an HTTP healthcheck, a random `127.0.0.1` port is published for the
+  probe. It is loopback-only and is the only host-port exception for HTTP services.
+- Non-HTTP services may publish ports explicitly; the target default bind is `127.0.0.1`.
+- Health probes use the loopback port, so the project network does not need to be reachable from
+  the host. The image's Docker `HEALTHCHECK` is used as a fallback when no spec healthcheck exists.
 
 ### Ingress adapter
 
@@ -362,6 +365,13 @@ values. Those remain the operator's responsibility.
 Retention: keep the last 10 deployments or 30 days, whichever is longer. If a required image digest
 is no longer available, fail before changing the running version.
 
+Stateless services use rolling replacement: the new container must be healthy before the route
+switches and the old container is removed. Services with volumes default to `recreate`: the old
+container is stopped first and restarted if the new one fails.
+
+V1 switches Caddy routes atomically and then removes the old container. Graceful request draining
+is still pending.
+
 ## Process model
 
 - `hardvoxel-daemon.service` runs the daemon.
@@ -397,14 +407,16 @@ daemon's lifetime.
 
 - Caddy joins each project network with `docker network connect` when the project is created and
   leaves it when the project is removed.
-- Caddy routes by host: the control-plane hostname goes to the daemon, app hostnames go to project
+- Caddy routes by host: the control-plane hostname goes to the daemon; app hostnames go to project
   containers.
+- Caddy routes target the container's IP on the project network and the container port. The route
+  is re-applied on every deploy.
+- Stable aliases such as `hv-<project>-<service>` are used for service-to-service DNS, not for
+  ingress.
 - The control-plane hostname must be separate from every app hostname.
-- Routes target the stable service alias and the container port, never a published host port.
 - App containers cannot reach the admin socket.
-- The route is re-applied on every deploy, so a recreated container's address is picked up.
-- If the runtime changes a container's address outside a deploy, Caddy's dynamic upstream
-  resolution or a reconcile pass corrects it.
+- If the runtime changes a container's address outside a deploy, the next deploy re-applies the
+  route. A reconcile pass for out-of-band restarts is still pending.
 
 ## TLS
 
@@ -419,7 +431,8 @@ daemon's lifetime.
 
 ## Security
 
-- Public surface: SSH, 80, and 443. Application ports are not published by default.
+- Public surface: SSH, 80, and 443. Application ports are not published publicly. A random
+  loopback port may be published for health checks.
 - The control plane is public on 443 with bearer-token auth. It is root-equivalent; treat every
   token as a root credential.
 - Tokens are high-entropy, hashed at rest, scoped, expiring, revocable, and shown once. Plaintext is

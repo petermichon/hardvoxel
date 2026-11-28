@@ -4,6 +4,9 @@ import { createServer } from "node:http";
 import { dirname } from "node:path";
 
 import { createHandler } from "./handler.js";
+import { createDeployer } from "./deployer.js";
+import { createCaddyIngress } from "./ingress.js";
+import { createRuntime } from "./runtime.js";
 import { StateStore } from "./state.js";
 
 const pkg = JSON.parse(
@@ -46,13 +49,32 @@ export async function createDaemon(options = {}) {
   const version = options.version ?? VERSION;
 
   const state = new StateStore(statePath);
-  const apiServer = createServer(createHandler({ state, version, admin: false }));
-  const adminServer = createServer(createHandler({ state, version, admin: true }));
+  const runtime = options.runtime ?? createRuntime();
+  const ingress =
+    options.ingress ??
+    (options.caddyAdminUrl
+      ? createCaddyIngress({ adminUrl: options.caddyAdminUrl, fetchImpl: options.fetchImpl })
+      : null);
+  const deployer =
+    options.deployer ??
+    createDeployer({
+      state,
+      runtime,
+      ingress,
+      secretRoot: options.secretRoot,
+      secretRunRoot: options.secretRunRoot,
+      healthCheck: options.healthCheck,
+      logger: options.logger,
+    });
+
+  const apiServer = createServer(createHandler({ state, version, admin: false, deployer }));
+  const adminServer = createServer(createHandler({ state, version, admin: true, deployer }));
 
   let closed = false;
 
   async function start() {
     try {
+      state.markInterruptedDeployments();
       await listen(apiServer, apiPort, apiHost);
 
       mkdirSync(dirname(adminSocket), { recursive: true, mode: 0o750 });
@@ -87,6 +109,9 @@ export async function createDaemon(options = {}) {
 
   return {
     state,
+    runtime,
+    ingress,
+    deployer,
     apiServer,
     adminServer,
     adminSocket,

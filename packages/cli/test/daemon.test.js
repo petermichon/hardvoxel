@@ -20,6 +20,15 @@ const spec = {
 
 let dir;
 let daemon;
+let deployCalls;
+
+function fakeDeployer() {
+  return {
+    async deploy(...args) {
+      deployCalls.push(args);
+    },
+  };
+}
 
 function unixRequest(socketPath, method, path, body) {
   return new Promise((resolve, reject) => {
@@ -71,11 +80,13 @@ async function createToken(scopes = ["deploy", "read"]) {
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), "hardvoxel-daemon-"));
+  deployCalls = [];
   daemon = await createDaemon({
     statePath: join(dir, "state.db"),
     adminSocket: join(dir, "admin.sock"),
     apiHost: "127.0.0.1",
     apiPort: 0,
+    deployer: fakeDeployer(),
   });
   await daemon.start();
 });
@@ -112,6 +123,8 @@ describe("daemon skeleton", () => {
     expect(applied.body.project).toBe("my-app");
     expect(applied.body.status).toBe("pending");
     expect(applied.body.deployment_id).toBeString();
+    expect(deployCalls).toHaveLength(1);
+    expect(deployCalls[0][0]).toBe("my-app");
 
     const project = await apiRequest(daemon.apiPort(), "GET", "/v1/projects/my-app", { token });
     expect(project.status).toBe(200);
@@ -196,6 +209,7 @@ describe("daemon skeleton", () => {
       adminSocket: join(dir, "admin.sock"),
       apiHost: "127.0.0.1",
       apiPort: 0,
+      deployer: fakeDeployer(),
     });
     await daemon.start();
 

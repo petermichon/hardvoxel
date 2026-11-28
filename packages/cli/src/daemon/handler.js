@@ -133,7 +133,7 @@ async function handleAdmin(req, res, parts, state) {
   throw new HttpError(404, "not found");
 }
 
-async function handleApi(req, res, parts, state) {
+async function handleApi(req, res, parts, state, deployer) {
   if (
     req.method === "POST" &&
     parts.length === 4 &&
@@ -160,6 +160,14 @@ async function handleApi(req, res, parts, state) {
     }
 
     const deployment = state.applyProject(project, spec);
+
+    if (!deployer) throw new HttpError(500, "deployer is not configured");
+    Promise.resolve()
+      .then(() => deployer.deploy(project, spec, deployment.id))
+      .catch((error) => {
+        console.error(`hardvoxel-daemon: deployment ${deployment.id} failed: ${error.message}`);
+      });
+
     return sendJson(res, 202, {
       deployment_id: deployment.id,
       project,
@@ -222,7 +230,7 @@ async function handleApi(req, res, parts, state) {
   throw new HttpError(404, "not found");
 }
 
-export function createHandler({ state, version, admin = false }) {
+export function createHandler({ state, version, admin = false, deployer }) {
   return async function handler(req, res) {
     try {
       const url = new URL(req.url || "/", "http://localhost");
@@ -238,7 +246,7 @@ export function createHandler({ state, version, admin = false }) {
       }
 
       if (admin) return await handleAdmin(req, res, parts, state);
-      return await handleApi(req, res, parts, state);
+      return await handleApi(req, res, parts, state, deployer);
     } catch (error) {
       if (error instanceof HttpError) {
         const headers = error.status === 401 ? { "www-authenticate": "Bearer" } : {};

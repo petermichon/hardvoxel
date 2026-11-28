@@ -12,7 +12,8 @@ Environment=HARDVOXEL_DOCKER=docker
 ExecStart=/usr/local/bin/hardvoxel-daemon \
   --state /var/lib/hardvoxel/state.db \
   --api 127.0.0.1:8787 \
-  --admin-socket /run/hardvoxel/admin.sock
+  --admin-socket /run/hardvoxel/admin.sock \
+  --caddy-admin http://127.0.0.1:2019
 Restart=on-failure
 RestartSec=2
 TimeoutStopSec=30
@@ -26,6 +27,7 @@ StateDirectoryMode=0700
 
 NoNewPrivileges=yes
 PrivateTmp=yes
+# Registry auth uses /root/.docker; keep it readable but not writable.
 ProtectHome=read-only
 ProtectSystem=full
 ProtectKernelTunables=yes

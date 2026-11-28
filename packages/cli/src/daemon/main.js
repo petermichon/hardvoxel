@@ -9,6 +9,7 @@ Options:
   --state <path>          SQLite state file (default: /var/lib/hardvoxel/state.db)
   --api <host:port>       Loopback API for Caddy (default: 127.0.0.1:8787)
   --admin-socket <path>   Local admin socket (default: /run/hardvoxel/admin.sock)
+  --caddy-admin <url>     Caddy admin API (default: disabled)
   -h, --help              Show this message
 `;
 
@@ -37,6 +38,7 @@ export function parseArgs(argv) {
     apiHost: "127.0.0.1",
     apiPort: 8787,
     adminSocket: "/run/hardvoxel/admin.sock",
+    caddyAdminUrl: null,
     help: false,
   };
 
@@ -61,6 +63,10 @@ export function parseArgs(argv) {
       options.adminSocket = needValue(argv, ++index, arg);
     } else if (arg.startsWith("--admin-socket=")) {
       options.adminSocket = arg.slice("--admin-socket=".length);
+    } else if (arg === "--caddy-admin") {
+      options.caddyAdminUrl = needValue(argv, ++index, arg);
+    } else if (arg.startsWith("--caddy-admin=")) {
+      options.caddyAdminUrl = arg.slice("--caddy-admin=".length);
     } else {
       throw new Error(`unknown option "${arg}". Run "hardvoxel-daemon --help".`);
     }
@@ -68,6 +74,7 @@ export function parseArgs(argv) {
 
   if (!options.statePath) throw new Error("--state cannot be empty");
   if (!options.adminSocket) throw new Error("--admin-socket cannot be empty");
+  if (options.caddyAdminUrl === "") throw new Error("--caddy-admin cannot be empty");
 
   return options;
 }
