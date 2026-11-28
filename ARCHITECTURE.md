@@ -97,7 +97,26 @@ daemon
 
 ### Runtime adapter
 
-- Docker Engine first, Podman compatible through `HARDVOXEL_DOCKER`.
+- Docker Engine or Podman through their CLI, selected with `HARDVOXEL_DOCKER`.
+- V1 uses `execFile` and JSON outputs, not the Engine API. The CLI handles private registry
+  authentication and Podman parity. Human-readable output is never parsed.
+- The adapter stays runtime-agnostic:
+
+```text
+pull(image)
+create(spec)
+start(id)
+stop(id)
+remove(id)
+inspect(id)
+list(project)
+logs(id, follow)
+ensureNetwork(project)
+imageDigest(image)
+```
+
+- An Engine API adapter can be added later behind the same interface for high-frequency events,
+  remote engines, or a multi-server agent.
 - One Docker network per project. Caddy is attached to each project network it serves.
 - Containers get stable aliases such as `hv-<project>-<service>`.
 - HTTP services do not publish host ports. Only Caddy publishes 80/443.
@@ -484,6 +503,7 @@ replace the node proxy. Shared storage across machines is not promised.
 | Control-plane hostname | Required | TLS and routing; separate from app hosts. |
 | State | SQLite | Single host, embedded, no database server. |
 | Runtime | Docker / Podman | Existing ecosystem and images; containerd alone is not a user-facing runtime. |
+| Runtime transport | CLI (`docker` / `podman`) | Registry auth and Podman parity; an API adapter can follow behind the same interface. |
 | Target host | Dedicated server | Owning 80/443 is the contract; there is no shared-edge mode. |
 | External ingress | Not supported | One stack and one support surface; the adapter is internal, not a plugin API. |
 | Tenancy | Multiple projects per instance, single operator | Use the whole server without multi-user complexity. |

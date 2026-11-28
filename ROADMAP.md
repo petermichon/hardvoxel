@@ -39,6 +39,7 @@ local daemon and an embedded Caddy ingress.
 ## v1.x
 
 - [ ] Optional browser UI.
+- [ ] Engine API runtime adapter if events, performance, or remote engines justify it.
 - [ ] Container isolation hardening for deploy tokens.
 - [ ] Secret versioning for exact rollback.
 - [ ] Encrypted backup archive for secrets.

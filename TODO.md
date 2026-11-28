@@ -7,7 +7,9 @@
       revocation, rate limiting, audit log.
 - [ ] Admin socket: token create/list/rotate/revoke, audit, volume deletion.
 - [ ] Control-plane Caddy block: dedicated hostname, TLS, static route.
-- [ ] Runtime adapter: Docker/Podman, per-project network, stable aliases, health checks.
+- [ ] Runtime adapter interface and CLI implementation (`execFile`, JSON outputs); map common
+      errors into a small taxonomy.
+- [ ] Runtime integration: Docker/Podman, per-project network, stable aliases, health checks.
 - [ ] Secret store: `0600` project files, metadata in SQLite, no values in the spec or database.
 - [ ] Secret delivery: per-container `0400` copies, service `uid`/`gid`, read-only mounts; env fallback.
 - [ ] `hardvoxel secret set/list/rm` over SSH admin; hidden prompt and stdin.
